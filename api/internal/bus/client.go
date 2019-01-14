@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"strings"
 )
 
@@ -29,6 +30,7 @@ func (c *Client) Send(method, endpoint string, body interface{}, result interfac
 	if result != nil {
 		bodyValue := struct{ Value interface{} }{result}
 		if err := json.Unmarshal(responseBody, &bodyValue); err != nil {
+			fmt.Println("Error unmarshaling:", err)
 			return fmt.Errorf("unexpected response: %s", responseBody)
 		}
 	}
@@ -57,6 +59,9 @@ func (c *Client) makeRequest(url, method string, body []byte) ([]byte, error) {
 		request.Header.Add("Content-Type", "application/json")
 	}
 
+	req, _ := httputil.DumpRequest(request, true)
+	fmt.Println(string(req))
+
 	response, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %s", err)
@@ -68,7 +73,12 @@ func (c *Client) makeRequest(url, method string, body []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	if strings.Contains(string(body), "popup_alert") {
+		fmt.Printf("Sent request:\n\n%s\n\nResponse:\n\n%s\n", string(body), string(responseBody))
+	}
+
 	if response.StatusCode < 200 || response.StatusCode > 299 {
+		fmt.Println("Response code: ", response.StatusCode, string(responseBody))
 		return nil, parseResponseError(responseBody)
 	}
 

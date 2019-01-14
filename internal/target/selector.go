@@ -15,6 +15,7 @@ const (
 	Label      Type = `Label: "%s"`
 	Button     Type = `Button: "%s"`
 	Name       Type = `Name: "%s"`
+	TagName    Type = `Tag: "%s"`
 	A11yID     Type = "Accessibility ID: %s"
 	AndroidAut Type = "Android UIAut.: %s"
 	IOSAut     Type = "iOS UIAut.: %s"
@@ -65,6 +66,8 @@ func (s Selector) apiType() string {
 		return "link text"
 	case Name:
 		return "name"
+	case TagName:
+		return "tag name"
 	case A11yID:
 		return "accessibility id"
 	case AndroidAut:

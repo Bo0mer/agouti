@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	phantomDriver    = agouti.PhantomJS()
-	chromeDriver     = agouti.ChromeDriver()
-	seleniumDriver   = agouti.Selenium(agouti.Browser("firefox"))
+	phantomDriver  = agouti.PhantomJS()
+	chromeDriver   = agouti.ChromeDriver()
+	seleniumDriver = agouti.GeckoDriver()
+	//seleniumDriver   = agouti.Selenium(agouti.Browser("firefox"))
 	selendroidDriver = agouti.Selendroid("selendroid-standalone-0.15.0-with-dependencies.jar")
 	edgeDriver       = agouti.EdgeDriver()
 
@@ -28,7 +29,7 @@ func TestIntegration(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	Expect(phantomDriver.Start()).To(Succeed())
+	//Expect(phantomDriver.Start()).To(Succeed())
 	if !headlessOnly {
 		Expect(chromeDriver.Start()).To(Succeed())
 		Expect(seleniumDriver.Start()).To(Succeed())
@@ -43,7 +44,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	Expect(phantomDriver.Stop()).To(Succeed())
+	//Expect(phantomDriver.Stop()).To(Succeed())
 	if !headlessOnly {
 		Expect(chromeDriver.Stop()).To(Succeed())
 		Expect(seleniumDriver.Stop()).To(Succeed())

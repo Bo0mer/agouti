@@ -8,7 +8,7 @@ type Window struct {
 }
 
 func (w *Window) Send(method, endpoint string, body, result interface{}) error {
-	return w.Session.Send(method, path.Join("window", w.ID, endpoint), body, result)
+	return w.Session.Send(method, path.Join("window", endpoint), body, result)
 }
 
 func (w *Window) SetSize(width, height int) error {
@@ -17,5 +17,5 @@ func (w *Window) SetSize(width, height int) error {
 		Height int `json:"height"`
 	}{width, height}
 
-	return w.Send("POST", "size", request, nil)
+	return w.Send("POST", "rect", request, nil)
 }

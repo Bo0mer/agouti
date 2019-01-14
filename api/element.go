@@ -20,17 +20,17 @@ func (e *Element) GetID() string {
 }
 
 func (e *Element) GetElement(selector Selector) (*Element, error) {
-	var result struct{ Element string }
+	var result elementResult
 
 	if err := e.Send("POST", "element", selector, &result); err != nil {
 		return nil, err
 	}
 
-	return &Element{result.Element, e.Session}, nil
+	return &Element{result.ElementID(), e.Session}, nil
 }
 
 func (e *Element) GetElements(selector Selector) ([]*Element, error) {
-	var results []struct{ Element string }
+	var results []elementResult
 
 	if err := e.Send("POST", "elements", selector, &results); err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (e *Element) GetElements(selector Selector) ([]*Element, error) {
 
 	elements := []*Element{}
 	for _, result := range results {
-		elements = append(elements, &Element{result.Element, e.Session})
+		elements = append(elements, &Element{result.ElementID(), e.Session})
 	}
 
 	return elements, nil
@@ -77,7 +77,8 @@ func (e *Element) GetCSS(property string) (string, error) {
 }
 
 func (e *Element) Click() error {
-	return e.Send("POST", "click", nil, nil)
+	var body struct{}
+	return e.Send("POST", "click", body, nil)
 }
 
 func (e *Element) Clear() error {
@@ -144,7 +145,7 @@ func (e *Element) GetLocation() (x, y int, err error) {
 
 func (e *Element) GetSize() (width, height int, err error) {
 	var size struct {
-		Width float64 `json:"width"`
+		Width  float64 `json:"width"`
 		Height float64 `json:"height"`
 	}
 	if err := e.Send("GET", "size", nil, &size); err != nil {
@@ -155,4 +156,16 @@ func (e *Element) GetSize() (width, height int, err error) {
 
 func round(number float64) int {
 	return int(number + 0.5)
+}
+
+type elementResult struct {
+	JSONWireProtocolElement string `json:"ELEMENT"`
+	Element                 string `json:"element-6066-11e4-a52e-4f735466cecf"`
+}
+
+func (e elementResult) ElementID() string {
+	if e.JSONWireProtocolElement != "" {
+		return e.JSONWireProtocolElement
+	}
+	return e.Element
 }

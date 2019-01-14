@@ -46,17 +46,17 @@ func (s *Session) Delete() error {
 }
 
 func (s *Session) GetElement(selector Selector) (*Element, error) {
-	var result struct{ Element string }
+	var result elementResult
 
 	if err := s.Send("POST", "element", selector, &result); err != nil {
 		return nil, err
 	}
 
-	return &Element{result.Element, s}, nil
+	return &Element{result.ElementID(), s}, nil
 }
 
 func (s *Session) GetElements(selector Selector) ([]*Element, error) {
-	var results []struct{ Element string }
+	var results []elementResult
 
 	if err := s.Send("POST", "elements", selector, &results); err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (s *Session) GetElements(selector Selector) ([]*Element, error) {
 
 	elements := []*Element{}
 	for _, result := range results {
-		elements = append(elements, &Element{result.Element, s})
+		elements = append(elements, &Element{result.ElementID(), s})
 	}
 
 	return elements, nil
@@ -73,7 +73,7 @@ func (s *Session) GetElements(selector Selector) ([]*Element, error) {
 func (s *Session) GetActiveElement() (*Element, error) {
 	var result struct{ Element string }
 
-	if err := s.Send("POST", "element/active", nil, &result); err != nil {
+	if err := s.Send("GET", "element/active", empty, &result); err != nil {
 		return nil, err
 	}
 
@@ -82,7 +82,7 @@ func (s *Session) GetActiveElement() (*Element, error) {
 
 func (s *Session) GetWindow() (*Window, error) {
 	var windowID string
-	if err := s.Send("GET", "window_handle", nil, &windowID); err != nil {
+	if err := s.Send("GET", "window", nil, &windowID); err != nil {
 		return nil, err
 	}
 	return &Window{windowID, s}, nil
@@ -90,7 +90,7 @@ func (s *Session) GetWindow() (*Window, error) {
 
 func (s *Session) GetWindows() ([]*Window, error) {
 	var windowsID []string
-	if err := s.Send("GET", "window_handles", nil, &windowsID); err != nil {
+	if err := s.Send("GET", "window/handles", nil, &windowsID); err != nil {
 		return nil, err
 	}
 
@@ -224,9 +224,7 @@ func (s *Session) Frame(frame *Element) error {
 	var elementID interface{}
 
 	if frame != nil {
-		elementID = struct {
-			Element string `json:"ELEMENT"`
-		}{frame.ID}
+		elementID = elementResult{frame.ID, frame.ID}
 	}
 
 	request := struct {
@@ -237,7 +235,7 @@ func (s *Session) Frame(frame *Element) error {
 }
 
 func (s *Session) FrameParent() error {
-	return s.Send("POST", "frame/parent", nil, nil)
+	return s.Send("POST", "frame/parent", empty, nil)
 }
 
 func (s *Session) Execute(body string, arguments []interface{}, result interface{}) error {
@@ -250,7 +248,7 @@ func (s *Session) Execute(body string, arguments []interface{}, result interface
 		Args   []interface{} `json:"args"`
 	}{body, arguments}
 
-	if err := s.Send("POST", "execute", request, result); err != nil {
+	if err := s.Send("POST", "execute/sync", request, result); err != nil {
 		return err
 	}
 
@@ -258,20 +256,20 @@ func (s *Session) Execute(body string, arguments []interface{}, result interface
 }
 
 func (s *Session) Forward() error {
-	return s.Send("POST", "forward", nil, nil)
+	return s.Send("POST", "forward", empty, nil)
 }
 
 func (s *Session) Back() error {
-	return s.Send("POST", "back", nil, nil)
+	return s.Send("POST", "back", empty, nil)
 }
 
 func (s *Session) Refresh() error {
-	return s.Send("POST", "refresh", nil, nil)
+	return s.Send("POST", "refresh", empty, nil)
 }
 
 func (s *Session) GetAlertText() (string, error) {
 	var text string
-	if err := s.Send("GET", "alert_text", nil, &text); err != nil {
+	if err := s.Send("GET", "alert/text", nil, &text); err != nil {
 		return "", err
 	}
 	return text, nil
@@ -281,15 +279,15 @@ func (s *Session) SetAlertText(text string) error {
 	request := struct {
 		Text string `json:"text"`
 	}{text}
-	return s.Send("POST", "alert_text", request, nil)
+	return s.Send("POST", "alert/text", request, nil)
 }
 
 func (s *Session) AcceptAlert() error {
-	return s.Send("POST", "accept_alert", nil, nil)
+	return s.Send("POST", "alert/accept", empty, nil)
 }
 
 func (s *Session) DismissAlert() error {
-	return s.Send("POST", "dismiss_alert", nil, nil)
+	return s.Send("POST", "alert/dismiss", empty, nil)
 }
 
 func (s *Session) NewLogs(logType string) ([]Log, error) {
@@ -478,3 +476,7 @@ func (s *Session) SetScriptTimeout(timeout int) error {
 	}{timeout}
 	return s.Send("POST", "timeouts/async_script", request, nil)
 }
+
+// empty is used to POST a empty request body. This is required by geckodriver
+// for some unknown reason.
+var empty struct{}
